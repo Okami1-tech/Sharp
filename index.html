@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    
+    <!-- Primary SEO -->
+    <title>Akrada — Campus Navigation Made Simple</title>
+    <meta name="description" content="Student-powered campus navigation. Find locations, get directions, and never get lost on campus again. Built by Okami Nalado.">
+    <meta name="keywords" content="campus navigation, university map, student app, Akrada, campus directions, Nigeria universities">
+    <meta name="author" content="Okami Nalado">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://akrada.app/">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Akrada — Campus Navigation Made Simple">
+    <meta property="og:description" content="Student-powered campus navigation. Find locations, get directions, and never get lost on campus again.">
+    <meta property="og:image" content="https://akrada.app/logo.png">
+    <meta property="og:url" content="https://akrada.app">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Akrada">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Akrada — Campus Navigation Made Simple">
+    <meta name="twitter:description" content="Student-powered campus navigation. Never get lost on campus again.">
+    <meta name="twitter:image" content="https://akrada.app/logo.png">
+    
+    <!-- PWA -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="logo.png" type="image/png">
+    <link rel="apple-touch-icon" href="logo.png">
+    <meta name="theme-color" content="#9333EA">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Akrada">
+    
+    <!-- Mapbox -->
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+    
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0"></script>
+    
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Akrada",
+        "description": "Student-powered campus navigation platform",
+        "url": "https://akrada.app",
+        "author": {
+            "@type": "Person",
+            "name": "Okami Nalado"
+        },
+        "applicationCategory": "NavigationApplication",
+        "operatingSystem": "All"
+    }
+    </script>
+</head>
+<body>
+    <!-- Install Banner -->
+    <div id="install-banner" class="install-banner hidden">
+        <img src="logo.png" alt="Akrada Logo" class="banner-logo">
+        <div class="banner-content">
+            <p>Install Akrada for a better campus experience</p>
+        </div>
+        <div class="banner-buttons">
+            <button id="install-btn" class="install-button">Install</button>
+            <button id="dismiss-btn" class="dismiss-button">Maybe Later</button>
+        </div>
+    </div>
+
+    <!-- Offline Banner -->
+    <div id="offline-banner" class="offline-banner hidden">
+        <span>📡 You're offline. Maps still work, but directions may be limited.</span>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <img src="logo.png" alt="Akrada" class="loading-logo">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Loading your campus...</p>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="auth-screen active">
+        <div class="auth-container">
+            <img src="logo.png" alt="Akrada Logo" class="auth-logo">
+            <h2>Welcome to Akrada</h2>
+            <p>Campus Intelligence Platform</p>
+            
+            <form id="login-form" class="auth-form">
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+
+            <div class="auth-links">
+                <button id="show-signup">Don't have an account? Sign Up</button>
+                <button id="forgot-password">Forgot Password?</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Signup Screen -->
+    <div id="signup-screen" class="auth-screen">
+        <div class="auth-container">
+            <img src="logo.png" alt="Akrada Logo" class="auth-logo">
+            <h2>Create Account</h2>
+            
+            <form id="signup-form" class="auth-form">
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <input type="password" name="confirmPassword" placeholder="Confirm Password" required>
+                
+                <select id="school-select" name="school" required>
+                    <option value="">Select Your School</option>
+                </select>
+
+                <!-- New: Optional struggle place field -->
+                <div class="optional-field">
+                    <input type="text" name="strugglePlace" id="struggle-place" placeholder="What's one place you always struggle to find? (optional)" class="optional-input">
+                </div>
+                
+                <button type="submit">Sign Up</button>
+            </form>
+
+            <div class="auth-links">
+                <button id="show-login">Already have an account? Login</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main App -->
+    <div id="main-app" class="main-app hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <h1>Akrada</h1>
+            </div>
+            <div class="header-center">
+                <span id="current-school">Loading...</span>
+            </div>
+            <div class="header-right">
+                <button id="header-share-btn" class="icon-btn" title="Share Akrada">📤</button>
+                <img src="logo.png" alt="Logo" class="header-logo">
+                <button id="menu-toggle" class="menu-btn">☰</button>
+            </div>
+        </header>
+
+        <!-- Sidebar Menu -->
+        <div id="sidebar-menu" class="sidebar-menu">
+            <div class="menu-header">
+                <img src="logo.png" alt="Akrada" class="menu-logo">
+                <h3>Akrada</h3>
+                <p class="menu-subtitle">Campus Intelligence</p>
+            </div>
+            <nav class="menu-nav">
+                <a href="#" class="menu-item active" data-view="map">🗺️ Map View</a>
+                <a href="#" class="menu-item" data-view="categories">📂 Categories</a>
+                <a href="#" class="menu-item" data-view="search">🔍 Search</a>
+                <a href="#" class="menu-item" data-view="profile">👤 Profile</a>
+                <a href="#" class="menu-item" data-view="referrals">🎁 Referrals</a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="#" class="menu-item" data-view="about">📖 About Akrada</a>
+                <a href="#" class="menu-item" id="share-menu-btn">📢 Share Akrada</a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="#" class="menu-item menu-highlight" data-view="support">❤️ Support the Mission</a>
+                <a href="#" class="menu-item menu-business" data-view="business">🏪 List Your Business</a>
+                
+                <div class="menu-divider"></div>
+                
+                <a href="#" class="menu-item" data-view="settings">⚙️ Settings</a>
+                <a href="#" class="menu-item" data-view="logout">🚪 Logout</a>
+            </nav>
+            <div class="menu-footer">
+                <p class="version-text">Akrada v1.0 · Built in UniJos 🌍</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="app-main">
+            <!-- Map View -->
+            <div id="map-view" class="view active">
+                <!-- Search Bar Overlay on Map -->
+                <div class="map-search-container">
+                    <div class="map-search-bar">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="map-search-input" placeholder="Search locations on campus..." class="map-search-input" autocomplete="off">
+                        <button id="clear-search-btn" class="clear-search-btn hidden">✕</button>
+                    </div>
+                    <div id="map-search-dropdown" class="map-search-dropdown hidden">
+                        <div id="search-history-section" class="search-history-section hidden">
+                            <p class="search-section-label">Recent</p>
+                            <div id="search-history-list"></div>
+                        </div>
+                        <div id="search-results-section">
+                            <div id="search-results-list"></div>
+                        </div>
+                        <div id="search-empty-state" class="search-empty-state hidden">
+                            <p>😕 No locations found</p>
+                            <small>Try a different search or <a href="#" id="report-missing-link">suggest a location</a></small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Container -->
+                <div id="map" class="map-container"></div>
+
+                <!-- Partner Badge -->
+                <div id="partner-badge" class="partner-badge hidden">
+                    <span>📍 Mapped by a <span id="partner-campus-name">student</span> partner</span>
+                </div>
+
+                <!-- Recently Viewed Row -->
+                <div id="recently-viewed" class="recently-viewed hidden">
+                    <p class="section-label">Recently Viewed</p>
+                    <div id="recently-viewed-list" class="recently-viewed-list"></div>
+                </div>
+
+                <!-- Category Filters -->
+                <div class="category-filters">
+                    <div class="filter-chips" id="filter-chips">
+                        <button class="filter-chip active" data-category="all">All</button>
+                        <button class="filter-chip" data-category="faculties">Faculties</button>
+                        <button class="filter-chip" data-category="libraries">Libraries</button>
+                        <button class="filter-chip" data-category="hostels">Hostels</button>
+                        <button class="filter-chip" data-category="restaurants">Restaurants</button>
+                        <button class="filter-chip" data-category="clinics">Clinics</button>
+                        <button class="filter-chip" data-category="printing">Printing</button>
+                        <button class="filter-chip" data-category="atms">ATMs</button>
+                    </div>
+                </div>
+
+                <!-- Location Detail Card (slides up from bottom) -->
+                <div id="location-detail-card" class="location-detail-card hidden">
+                    <div class="location-card-handle"></div>
+                    <div class="location-card-content">
+                        <div class="location-card-header">
+                            <h3 id="location-card-name"></h3>
+                            <span id="location-card-category" class="location-category-tag"></span>
+                            <span id="location-card-popular" class="popular-badge hidden">🔥 Popular</span>
+                        </div>
+                        <p id="location-card-description" class="location-card-description"></p>
+                        
+                        <!-- Business Contact (for verified businesses) -->
+                        <div id="location-card-business" class="location-card-business hidden">
+                            <div class="business-contact-row">
+                                <span class="verified-badge">✓ Verified Business</span>
+                            </div>
+                            <a id="location-card-phone" class="business-phone-btn" href="#">
+                                📞 <span id="business-phone-number"></span>
+                            </a>
+                        </div>
+
+                        <!-- Unclaimed Business -->
+                        <div id="location-card-unclaimed" class="location-card-unclaimed hidden">
+                            <a href="#" class="claim-business-link" id="claim-business-btn">🏪 Is this your business? List your number here.</a>
+                        </div>
+
+                        <div class="location-card-actions">
+                            <button id="location-directions-btn" class="directions-btn">🚶 Get Directions</button>
+                        </div>
+                        
+                        <div class="location-card-footer">
+                            <a href="#" id="location-report-link" class="report-link">Something wrong? Let us know.</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories View -->
+            <div id="categories-view" class="view">
+                <div class="view-header">
+                    <h2>Browse Categories</h2>
+                </div>
+                <div class="categories-grid">
+                    <div class="category-card" data-category="faculties">
+                        <div class="category-icon">🎓</div>
+                        <h3>Faculties</h3>
+                        <p class="category-count">Lecture halls & departments</p>
+                    </div>
+                    <div class="category-card" data-category="libraries">
+                        <div class="category-icon">📚</div>
+                        <h3>Libraries</h3>
+                        <p class="category-count">Study spaces & resources</p>
+                    </div>
+                    <div class="category-card" data-category="hostels">
+                        <div class="category-icon">🏠</div>
+                        <h3>Hostels</h3>
+                        <p class="category-count">On-campus accommodation</p>
+                    </div>
+                    <div class="category-card" data-category="restaurants">
+                        <div class="category-icon">🍽️</div>
+                        <h3>Restaurants</h3>
+                        <p class="category-count">Food spots & cafes</p>
+                    </div>
+                    <div class="category-card" data-category="clinics">
+                        <div class="category-icon">🏥</div>
+                        <h3>Clinics</h3>
+                        <p class="category-count">Medical centers</p>
+                    </div>
+                    <div class="category-card" data-category="printing">
+                        <div class="category-icon">🖨️</div>
+                        <h3>Printing Shops</h3>
+                        <p class="category-count">Print, scan & photocopy</p>
+                    </div>
+                    <div class="category-card" data-category="atms">
+                        <div class="category-icon">💳</div>
+                        <h3>ATMs</h3>
+                        <p class="category-count">Cash points</p>
+                    </div>
+                    <div class="category-card" data-category="sports">
+                        <div class="category-icon">⚽</div>
+                        <h3>Sports</h3>
+                        <p class="category-count">Fields & facilities</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search View -->
+            <div id="search-view" class="view">
+                <div class="view-header">
+                    <h2>Search Locations</h2>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search locations..." class="search-input">
+                    <div id="search-results" class="search-results"></div>
+                </div>
+            </div>
+
+            <!-- Profile View -->
+            <div id="profile-view" class="view">
+                <div class="profile-header">
+                    <img src="logo.png" alt="User" class="profile-avatar">
+                    <div class="profile-info">
+                        <h2 id="user-name">Welcome</h2>
+                        <p id="user-email">user@example.com</p>
+                        <p id="user-school">School: Loading...</p>
+                        <div class="referral-stats">
+                            <p>Referral Balance: ₦<span id="referral-balance">0</span></p>
+                            <p>Referral Code: <span id="referral-code">-</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Referrals View -->
+            <div id="referrals-view" class="view">
+                <div class="referral-section">
+                    <h3>Your Referral Link</h3>
+                    <div class="referral-link-container">
+                        <input type="text" id="referral-link" readonly>
+                        <button id="copy-referral-link" class="copy-btn">Copy</button>
+                    </div>
+                    <p class="referral-info">Earn ₦50 for every successful premium referral</p>
+                    
+                    <div class="referral-history">
+                        <h4>Referral History</h4>
+                        <div id="referral-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- About View -->
+            <div id="about-view" class="view">
+                <div class="about-container">
+                    <div class="about-hero">
+                        <img src="logo.png" alt="Akrada" class="about-logo">
+                        <h2>About Akrada</h2>
+                    </div>
+                    <div class="about-content">
+                        <p>Akrada is a campus navigation platform built to help students find important locations around their university without getting lost.</p>
+                        <p>It started as a simple idea — the struggle of finding lecture halls, departments, and offices in a new environment. A problem I lived. A problem I watched others live too.</p>
+                        <p>Today, Akrada is growing campus by campus, powered by students and partners who believe campus life should be easier and more connected.</p>
+                        
+                        <div class="about-divider"></div>
+                        
+                        <h3>Built By</h3>
+                        <p>Akrada was built by <strong>Okami Nalado</strong>, a 100-level student in the Mathematics Department, majoring in Statistics at the University of Jos.</p>
+                        <p class="about-vision"><em>"To ensure that no student, anywhere, ever has to feel lost on campus again."</em></p>
+                        
+                        <div class="about-divider"></div>
+                        
+                        <h3>Vision</h3>
+                        <p>Akrada is not just an app.</p>
+                        <p>It is a growing system for campus navigation — built for students, by a student, and expanding one campus at a time. 🌍🚀</p>
+                        <p class="about-free-note">Akrada is free for students. Always. Businesses pay to be discovered — never students.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Support View -->
+            <div id="support-view" class="view">
+                <div class="support-container">
+                    <div class="support-hero">
+                        <h2>❤️ Support the Mission</h2>
+                    </div>
+                    <div class="support-message">
+                        <p>Akrada is built by one student, for students.</p>
+                        <p>No ads. No fees. Just better campus navigation.</p>
+                        <p>If it's helped you find your way, consider supporting the mission.</p>
+                    </div>
+                    
+                    <div class="support-section">
+                        <h3>💰 Bank Transfer</h3>
+                        <div class="support-detail-card">
+                            <div class="detail-row">
+                                <span class="detail-label">Account Name</span>
+                                <span class="detail-value">Okami Enoch Nalado</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Account Number</span>
+                                <span class="detail-value">7089495567</span>
+                                <button class="copy-detail-btn" data-copy="7089495567">📋 Copy</button>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Bank</span>
+                                <span class="detail-value">Opay</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="support-section">
+                        <h3>₿ Bitcoin (BTC)</h3>
+                        <div class="support-detail-card">
+                            <div class="crypto-address" id="btc-address">15fbBqXZDdWMbpYoVTPTE6FDvyXc5Mvgos</div>
+                            <button class="copy-detail-btn full-width" data-copy="15fbBqXZDdWMbpYoVTPTE6FDvyXc5Mvgos">📋 Copy BTC Address</button>
+                        </div>
+                    </div>
+
+                    <div class="support-section">
+                        <h3>Ξ Ethereum (ETH)</h3>
+                        <div class="support-detail-card">
+                            <div class="crypto-address" id="eth-address">0x902c48c2962acaa14dbe7a6362434445eececa50</div>
+                            <button class="copy-detail-btn full-width" data-copy="0x902c48c2962acaa14dbe7a6362434445eececa50">📋 Copy ETH Address</button>
+                        </div>
+                    </div>
+
+                    <p class="support-footer">Not required. Just appreciated. 🙏</p>
+                </div>
+            </div>
+
+            <!-- Business View -->
+            <div id="business-view" class="view">
+                <div class="business-container">
+                    <div class="business-hero">
+                        <h2>🏪 List Your Business</h2>
+                        <p>Get discovered by students on campus</p>
+                    </div>
+                    <div class="business-info">
+                        <div class="business-info-card">
+                            <h3>Why List Your Business?</h3>
+                            <ul>
+                                <li>📞 Students can call you with one tap</li>
+                                <li>📍 Appear on the campus map</li>
+                                <li>🔍 Get found when students search</li>
+                                <li>✅ Verified badge builds trust</li>
+                            </ul>
+                        </div>
+                        <div class="business-pricing">
+                            <h3>Pricing</h3>
+                            <div class="pricing-card">
+                                <div class="pricing-amount">₦4,000<span>/month</span></div>
+                                <p>Phone number listed on your location</p>
+                            </div>
+                        </div>
+                    </div>
+                    <form id="business-claim-form" class="business-form">
+                        <h3>Claim Your Business</h3>
+                        <input type="text" name="businessName" placeholder="Business Name" required>
+                        <input type="text" name="ownerName" placeholder="Your Name" required>
+                        <input type="tel" name="phoneNumber" placeholder="Phone Number" required>
+                        <select name="category" required>
+                            <option value="">Select Category</option>
+                            <option value="restaurants">Restaurant</option>
+                            <option value="printing">Printing Shop</option>
+                            <option value="clinics">Pharmacy / Clinic</option>
+                            <option value="salon">Salon / Barber</option>
+                            <option value="kiosk">Kiosk / Vendor</option>
+                            <option value="other">Other</option>
+                        </select>
+                        <select name="campus" required>
+                            <option value="">Select Campus</option>
+                            <option value="unijos">University of Jos</option>
+                            <option value="kasu">Kaduna State University</option>
+                            <option value="delsu">Delta State University</option>
+                            <option value="atbu">ATBU Bauchi</option>
+                            <option value="uniabuja">University of Abuja</option>
+                        </select>
+                        <button type="submit" class="business-submit-btn">Submit — We'll contact you</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Subscription View -->
+            <div id="subscription-view" class="view">
+                <div class="subscription-plans">
+                    <div class="plan-card free-plan">
+                        <h3>Free Plan</h3>
+                        <ul>
+                            <li>Basic Map Access</li>
+                            <li>Limited Search</li>
+                            <li>Standard Features</li>
+                        </ul>
+                        <button class="plan-button active">Current Plan</button>
+                    </div>
+                    
+                    <div class="plan-card premium-plan">
+                        <h3>Premium Plan</h3>
+                        <div class="price">₦879<span>/month</span></div>
+                        <ul>
+                            <li>Advanced Search</li>
+                            <li>Full Alias Access</li>
+                            <li>Richer Campus Intelligence</li>
+                            <li>Priority Support</li>
+                        </ul>
+                        <button id="upgrade-btn" class="plan-button">Upgrade Now</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Withdrawals View -->
+            <div id="withdrawals-view" class="view">
+                <div class="withdrawal-section">
+                    <h3>Withdrawal Requests</h3>
+                    <p>Current Balance: ₦<span id="withdrawal-balance">0</span></p>
+                    
+                    <form id="withdrawal-form" class="withdrawal-form">
+                        <input type="text" name="bankName" placeholder="Bank Name" required>
+                        <input type="text" name="accountNumber" placeholder="Account Number" required>
+                        <input type="text" name="accountName" placeholder="Account Name" required>
+                        <input type="number" name="amount" placeholder="Amount (min ₦1000)" min="1000" required>
+                        <button type="submit">Request Withdrawal</button>
+                    </form>
+                    
+                    <div class="withdrawal-history">
+                        <h4>History</h4>
+                        <div id="withdrawal-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings View -->
+            <div id="settings-view" class="view">
+                <div class="settings-section">
+                    <div class="setting-item">
+                        <label>Dark Mode</label>
+                        <input type="checkbox" id="dark-mode-toggle">
+                    </div>
+                    <div class="setting-item">
+                        <label>Push Notifications</label>
+                        <input type="checkbox" id="notifications-toggle">
+                    </div>
+                    <button id="delete-account-btn" class="danger-button">Delete Account</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Report Location Modal -->
+    <div id="report-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Report an Issue</h3>
+                <button id="close-report-modal" class="modal-close-btn">✕</button>
+            </div>
+            <form id="report-form" class="report-form">
+                <input type="hidden" id="report-location-name">
+                <select id="report-type" required>
+                    <option value="">What's wrong?</option>
+                    <option value="wrong_location">Wrong location</option>
+                    <option value="wrong_name">Wrong name</option>
+                    <option value="missing_info">Missing information</option>
+                    <option value="closed">Permanently closed</option>
+                    <option value="other">Other</option>
+                </select>
+                <textarea id="report-description" placeholder="Describe the issue..." rows="3"></textarea>
+                <button type="submit">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Claim Business Modal -->
+    <div id="claim-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Claim This Business</h3>
+                <button id="close-claim-modal" class="modal-close-btn">✕</button>
+            </div>
+            <form id="claim-form" class="business-form">
+                <input type="hidden" id="claim-location-name">
+                <input type="text" name="businessName" placeholder="Business Name" required>
+                <input type="text" name="ownerName" placeholder="Your Name" required>
+                <input type="tel" name="phoneNumber" placeholder="Phone Number" required>
+                <button type="submit">Submit Claim</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
